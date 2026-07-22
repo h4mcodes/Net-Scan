@@ -1,0 +1,62 @@
+# Project Name: AI-Enhanced Network Intrusion Detection System (NIDS)
+
+## 1. Project Overview
+This project is an advanced, real-time Network Intrusion Detection System built on a 3-tier hybrid architecture (Java, Python, and web). It is designed to passively monitor network traffic passing through the host's Network Interface Controller (NIC), analyze its attributes using both heuristic rules and Machine Learning (ML), and visualize network health through a live, highly-responsive Command Center Dashboard.
+
+---
+
+## 2. How It Works (System Architecture)
+The project separates concerns into three distinct processing layers tightly integrated through APIs and WebSockets.
+
+*   **Layer 1: The Packet Sniffer (Java)**
+    Using native packet capturing libraries, it binds directly to the active network interface in promiscuous mode. It intercepts network packets (TCP, UDP, ICMP), parses their headers, and calculates telemetry metrics over discrete time windows (e.g., 5 seconds). 
+*   **Layer 2: The ML Engine (Python)**
+    A Flask-based RESTful API hosts a pre-trained Scikit-Learn 'Isolation Forest' model. Every 5 seconds, the Java sniffer POSTs the current network telemetry data to this ML engine. The model evaluates the features to assign an "Anomaly Score", returning its findings to the Java backend. 
+*   **Layer 3: The Dashboard (HTML/Vanilla JS)**
+    The Java backend operates an embedded WebSocket server. After fusing the ML data and heuristic data, it streams a structured JSON payload to the visual dashboard dynamically plotting points and triggering visual alerts on the user interface without requiring a clunky database.
+
+---
+
+## 3. Features
+*   **Deep Packet Inspection Metrics:** Tracking protocols, source/destination ports, payload sizes, and specific flag behaviors (e.g. TCP SYN).
+*   **Machine Learning Threat Analysis:** Leverages an unsupervised ML model (Isolation Forest) tailored for analyzing multi-dimensional network feature data to catch "0-day" or unfamiliar anomalous traffic behavior.
+*   **Deterministic Heuristic Analytics:** Checks traffic synchronously against hard-capped parameters for guaranteed response to:
+    *   **SYN Floods:** Tracking high SYN flags without corresponding ACK flags globally or per-IP.
+    *   **Port Scanning:** Discovering an unusually large breadth of unique destination ports targeted by a single source IP in a short duration.
+    *   **Traffic Spikes:** Hard-capped overall bounds for extreme packet volumes.
+*   **Intelligent Alert Taging Mechanism:** The AlertEngine cross-references heuristic rules and AI predictions to generate weighted severity levels:
+    *   `HIGH` -> Rule triggered AND AI flagged anomaly.
+    *   `MEDIUM` -> Rule triggered but AI considers it normal.
+    *   `LOW` -> AI spotted unusual pattern, but no formal rule broken.
+*   **Glassmorphism UI Dashboard:** A natively responsive dark-mode cyber security operations center built with Chart.js line and doughnut elements tracking live data seamlessly.
+
+---
+
+## 4. Tools and Technologies Used
+*   **Backend Network Processing:** Java 17, Maven 
+*   **Packet Processing Library:** `pcap4j` (Pcap for Java wrappers) tying into Npcap native tools.
+*   **Machine Learning:** Python 3.x, Scikit-Learn (`IsolationForest`), Numpy, Joblib.
+*   **Communication Pipes:** `Flask` (Python HTTP Server), `Apache HttpClient` (Java HTTP wrapper), `Java-WebSocket` (Real-time duplex transmission).
+*   **Frontend UI:** Vanilla HTML/CSS, Vanilla JavaScript, Chart.js.
+
+---
+
+## 5. System Requirements
+To fully initialize the stack, the host machine entails:
+1.  **JDK 17 or higher** and **Apache Maven** installed.
+2.  **Python 3** installed with `flask`, `numpy`, and `scikit-learn` in its virtual environment.
+3.  **Npcap** installed locally, ensuring "WinPcap API-compatible Mode" is checked.
+4.  Standard web browser (Chrome/Edge/Firefox).
+
+---
+
+## 6. Full Working Process (The Data Pipeline)
+1.  **Initialization:** The Python script (`train.py`) compiles the statistical AI model and outputs it to `model.pkl`. The environment `app.py` boots up taking control of `localhost:5000`. 
+2.  **Capture Initialization:** The Java application (`PacketCapture.java`) locates an active Internet adapter and wraps it in a listener loop via Promiscuous Mode.
+3.  **Ingestion:** For every captured packet, `PacketParser.java` unpacks elements (IP, MAC, TCP/UDP headers, TCP flags, sizes) passing them to `PacketStats.java`.
+4.  **Aggregation:** Data is accumulated strictly for 5 seconds.
+5.  **External Threat Query:** Java sends the accumulated metrics (Packets/Sec, SYN counts, Port distribution) to Python via REST HTTP. Python feeds this into the Isolation Forest and returns whether the flow is computationally standard.
+6.  **Internal Threat Query:** Simultaneously, Java checks its own localized logic (Are we being port-scanned? Are there too many packets overall?).
+7.  **Evaluation:** Outputs from both Threat engines enter the `AlertEngine.java` where alerts are instantiated and queued.
+8.  **Output Subcontracting:** `DashboardServer.java` encapsulates all metrics and alert objects into one neat Data Transfer Object (DTO) translated into JSON.
+9.  **Rendering:** The front-end receives the WebSocket payload locally at `ws://localhost:8080`, unbundles it, refreshes the KPI labels, steps the Line charts forward by one increment, and pushes any new Security Alerts onto the Threat Detection Event Feed. All memory and variables reset for the next 5-second interval.

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="NetScan AI Command Center - Advanced Network Intrusion Detection System Dashboard">
+<title>NetScan Command Center</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg-base: #060913;
+    --bg-mesh-1: rgba(56, 189, 248, 0.15);
+    --bg-mesh-2: rgba(139, 92, 246, 0.15);
+    --glass-bg: rgba(13, 20, 38, 0.5);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-glow: rgba(56, 189, 248, 0.2);
+    
+    --accent-cyan: #38bdf8;
+    --accent-purple: #a855f7;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 24px;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Animated Background Mesh */
+  .bg-mesh {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -1; overflow: hidden; pointer-events: none;
+    background: radial-gradient(circle at 15% 50%, var(--bg-mesh-1), transparent 40%),
+                radial-gradient(circle at 85% 30%, var(--bg-mesh-2), transparent 40%);
+    animation: meshPulse 15s ease-in-out infinite alternate;
+  }
+  @keyframes meshPulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.1); opacity: 1; }
+  }
+
+  /* Structural Tags */
+  main {
+    max-width: 1440px; margin: 0 auto;
+  }
+  section { 
+    margin-bottom: 24px; 
+  }
+
+  /* Header */
+  header {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    margin-bottom: 32px;
+  }
+
+  .logo { display: flex; align-items: center; gap: 16px; }
+  .logo-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 20px; font-weight: 700; font-family: var(--font-heading);
+    box-shadow: 0 0 24px var(--glass-glow);
+    position: relative;
+  }
+  .logo-icon::after {
+    content: ''; position: absolute; inset: -2px; border-radius: inherit;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    filter: blur(8px); opacity: 0.6; z-index: -1;
+  }
+
+  .logo-text h1 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
+  .logo-text p { font-size: 13px; color: var(--text-secondary); }
+
+  .status-cluster { display: flex; align-items: center; gap: 24px; }
+  .last-update { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  
+  .ws-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); transition: 0.3s; }
+  .status-dot.live { background: var(--success); box-shadow: 0 0 12px var(--success); }
+
+  /* Alert Banner */
+  #alert-banner { /* ... enhanced banner ... */ }
+
+  /* Grid Layouts */
+  .grid { display: grid; gap: 24px; }
+  .grid-kpis { grid-template-columns: repeat(4, 1fr); }
+  .grid-charts { grid-template-columns: 2fr 1fr; }
+  .grid-content { grid-template-columns: 1fr 3fr; }
+  @media (max-width: 1024px) {
+    .grid-kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid-charts, .grid-content { grid-template-columns: 1fr; }
+  }
+
+  /* Glass Cards */
+  .card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: flex; flex-direction: column;
+  }
+  .card:hover { 
+    transform: translateY(-4px); 
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset; 
+  }
+  
+  .card-header { font-family: var(--font-heading); font-size: 13px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;}
+  
+  .kpi-value { font-family: var(--font-heading); font-size: 38px; font-weight: 700; color: var(--text-primary); line-height: 1.2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  .kpi-value.cyan { background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .kpi-sub { font-size: 13px; color: var(--text-muted); margin-top: 8px; font-weight: 500; }
+
+  /* Flash Animation for Updates */
+  .card.updated::after {
+    content: ''; position: absolute; inset: 0; border-radius: 16px;
+    border: 2px solid var(--accent-cyan);
+    animation: flashBorder 0.8s ease-out forwards; pointer-events: none;
+    box-shadow: inset 0 0 20px var(--glass-glow);
+  }
+  @keyframes flashBorder { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* Protocol Breakdown */
+  .proto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: auto; }
+  .proto-item { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
+  .proto-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+  .proto-val { font-size: 18px; font-weight: 600; font-family: var(--font-heading); }
+  
+  /* Feed System */
+  .feed-panel { height: 550px; overflow: hidden; display: flex; flex-direction: column; }
+  .feed-btn { 
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+    color: var(--text-secondary); padding: 6px 12px; border-radius: 8px; 
+    cursor: pointer; transition: all 0.2s; font-size: 11px; font-weight: 600; 
+  }
+  .feed-btn:hover { background: var(--text-primary); color: var(--bg-base); }
+  
+  #alert-list { flex: 1; overflow-y: auto; padding-right: 12px; display: flex; flex-direction: column; gap: 12px; }
+  #alert-list::-webkit-scrollbar { width: 6px; }
+  #alert-list::-webkit-scrollbar-track { background: transparent; }
+  #alert-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+  #alert-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+  .feed-item {
+    background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 16px; position: relative;
+    border-left: 4px solid transparent; 
+    animation: slideInFeed 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; gap: 16px; align-items: flex-start;
+    transition: transform 0.2s;
+  }
+  .feed-item:hover { transform: translateX(4px); background: rgba(255,255,255,0.04); }
+  @keyframes slideInFeed { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+  .feed-item.HIGH { border-left-color: var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.1) 0%, transparent 100%); }
+  .feed-item.MEDIUM { border-left-color: var(--warning); background: linear-gradient(90deg, rgba(245,158,11,0.1) 0%, transparent 100%); }
+  .feed-item.LOW { border-left-color: var(--success); background: linear-gradient(90deg, rgba(16,185,129,0.1) 0%, transparent 100%); }
+
+  .feed-icon { 
+    width: 36px; height: 36px; border-radius: 10px; 
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    background: rgba(0,0,0,0.2); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .feed-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary); }
+  .feed-type { font-weight: 700; letter-spacing: 0.5px; font-family: var(--font-heading); }
+  .feed-msg { font-size: 14px; line-height: 1.5; color: #e2e8f0; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: 1px; font-family: var(--font-heading); }
+  .badge-NONE { background: rgba(148,163,184,0.1); color: var(--text-secondary); border: 1px solid rgba(148,163,184,0.2); }
+  .badge-LOW { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-MEDIUM { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-HIGH { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.4); box-shadow: 0 0 20px rgba(239,68,68,0.2); animation: pulseAlert 2s infinite; }
+  @keyframes pulseAlert { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<main>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">NS</div>
+      <div class="logo-text">
+        <h1>NetScan</h1>
+        <p>AI Command Center Dashboard</p>
+      </div>
+    </div>
+    <div class="status-cluster">
+      <span class="last-update" id="last-update">Waiting for telemetry...</span>
+      <div class="ws-badge">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Disconnected</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="alert-banner" class="alert-banner" style="display:none; margin-bottom: 24px; padding: 16px 24px; border-radius: 12px; font-weight: 600; border-left: 4px solid var(--danger); background: rgba(239,68,68,0.1); color: #fff; backdrop-filter: blur(8px);"></div>
+
+  <section class="grid grid-kpis">
+    <article class="card" id="card-total">
+      <div class="card-header"><span>Total Packets</span></div>
+      <div class="kpi-value cyan" id="val-total">—</div>
+      <div class="kpi-sub">Lifetime Capture</div>
+    </article>
+    <article class="card" id="card-pps">
+      <div class="card-header"><span>Packets / Sec</span></div>
+      <div class="kpi-value cyan" id="val-pps">—</div>
+      <div class="kpi-sub">5s Window Avg</div>
+    </article>
+    <article class="card" id="card-syn">
+      <div class="card-header"><span>SYN Elements</span></div>
+      <div class="kpi-value cyan" id="val-syn">—</div>
+      <div class="kpi-sub">Flagged in Window</div>
+    </article>
+    <article class="card" id="card-ml">
+      <div class="card-header"><span>AI Prediction</span></div>
+      <div class="kpi-value" id="val-ml" style="font-size: 28px; line-height: 1.4;">—</div>
+      <div class="kpi-sub" id="val-ml-score">Confidence Score: —</div>
+    </article>
+  </section>
+
+  <section class="grid grid-charts">
+    <article class="card" style="padding: 24px;">
+      <div class="card-header"><span>Live Traffic Volume (P/s)</span></div>
+      <div style="height: 250px; width: 100%;"><canvas id="chart-pps"></canvas></div>
+    </article>
+    <article class="card" style="padding: 24px;">
+      <div class="card-header"><span>Protocol Distribution</span></div>
+      <div style="height: 250px; width: 100%; display: flex; justify-content: center;"><canvas id="chart-proto"></canvas></div>
+    </article>
+  </section>
+
+  <section class="grid grid-content">
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <article class="card" style="flex: 0 0 auto;">
+        <div class="card-header"><span>System Threat Level</span></div>
+        <div style="margin-top: 8px;"><span class="badge badge-NONE" id="alert-badge">NONE</span></div>
+      </article>
+      <article class="card" style="flex: 1;">
+        <div class="card-header"><span>Protocol Metrics</span></div>
+        <div class="proto-grid">
+          <div class="proto-item">
+            <div class="proto-label">TCP Segments</div>
+            <div class="proto-val" id="cnt-tcp" style="color: var(--accent-cyan);">—</div>
+          </div>
+          <div class="proto-item">
+            <div class="proto-label">UDP Datagrams</div>
+            <div class="proto-val" id="cnt-udp" style="color: var(--success);">—</div>
+          </div>
+          <div class="proto-item">
+            <div class="proto-label">ICMP Packets</div>
+            <div class="proto-val" id="cnt-icmp" style="color: var(--warning);">—</div>
+          </div>
+          <div class="proto-item">
+            <div class="proto-label">Other</div>
+            <div class="proto-val" id="cnt-other" style="color: var(--text-secondary);">—</div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <article class="card feed-panel">
+      <div class="card-header" style="margin-bottom: 20px;">
+        <span>Threat Detection Feed</span>
+        <button class="feed-btn" onclick="clearFeed()" id="clear-feed-btn">CLEAR LOGS</button>
+      </div>
+      <div id="alert-list">
+        <div style="text-align:center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; font-weight: 500;">
+          <div style="font-size: 24px; margin-bottom: 12px; opacity: 0.5;">🛡️</div>
+          System is secure. Monitoring for anomalies...
+        </div>
+      </div>
+    </article>
+  </section>
+</main>
+
+<script>
+const TypeIcons = {
+  'PORT_SCAN': '🔍',
+  'SYN_FLOOD': '🌊',
+  'HIGH_TRAFFIC': '📈',
+  'ML_ANOMALY': '🧠',
+  'DEFAULT': '⚠️'
+};
+
+const TypeColors = {
+  'PORT_SCAN': '#f59e0b',
+  'SYN_FLOOD': '#ef4444',
+  'HIGH_TRAFFIC': '#10b981',
+  'ML_ANOMALY': '#a855f7',
+  'DEFAULT': '#f8fafc'
+};
+
+const WS_URL = 'ws://localhost:8080';
+let ws, reconnectTimer;
+const dot = document.getElementById('status-dot');
+const stxt = document.getElementById('status-text');
+
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => { dot.classList.add('live'); stxt.textContent = 'SECURE LINK'; clearTimeout(reconnectTimer); };
+  ws.onclose = () => { dot.classList.remove('live'); stxt.textContent = 'RECONNECTING...'; reconnectTimer = setTimeout(connect, 3000); };
+  ws.onerror = () => { stxt.textContent = 'CONNECTION ERROR'; };
+  ws.onmessage = e => updateProcess(JSON.parse(e.data));
+}
+connect();
+
+// Chart Configuration
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 12;
+
+const ppsCtx = document.getElementById('chart-pps').getContext('2d');
+let gradientPPS = ppsCtx.createLinearGradient(0, 0, 0, 250);
+gradientPPS.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+gradientPPS.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+const ppsLabels = [], ppsVals = [];
+const ppsChart = new Chart(ppsCtx, {
+  type: 'line',
+  data: { 
+    labels: ppsLabels, 
+    datasets: [{ 
+      data: ppsVals, 
+      borderColor: '#38bdf8', 
+      backgroundColor: gradientPPS, 
+      borderWidth: 2, 
+      pointRadius: 4, 
+      pointBackgroundColor: '#0f172a',
+      pointBorderColor: '#38bdf8',
+      pointBorderWidth: 2,
+      pointHoverRadius: 6,
+      fill: true, 
+      tension: 0.4 
+    }] 
+  },
+  options: { 
+    responsive: true, 
+    maintainAspectRatio: false, 
+    plugins: { 
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        titleFont: { family: 'Outfit', size: 13 },
+        bodyFont: { family: 'Inter', size: 13 },
+        padding: 12,
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1
+      }
+    }, 
+    scales: { 
+      x: { grid: { display: false }, border: { display: false } }, 
+      y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } } 
+    } 
+  }
+});
+
+const protoCtx = document.getElementById('chart-proto').getContext('2d');
+const protoChart = new Chart(protoCtx, {
+  type: 'doughnut',
+  data: { 
+    labels: ['TCP','UDP','ICMP','Other'], 
+    datasets: [{ 
+      data: [1,1,1,1], 
+      backgroundColor: ['#38bdf8','#10b981','#f59e0b','#475569'], 
+      borderWidth: 0, 
+      hoverOffset: 8
+    }] 
+  },
+  options: { 
+    responsive: true, 
+    maintainAspectRatio: false, 
+    cutout: '75%', 
+    plugins: { 
+      legend: { position: 'right', labels: { boxWidth: 10, padding: 20, font: { family: 'Inter' } } },
+      tooltip: {
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        bodyFont: { family: 'Inter', size: 13 },
+        padding: 12
+      }
+    } 
+  }
+});
+
+function flashElem(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('updated');
+  void el.offsetWidth;
+  el.classList.add('updated');
+}
+
+function updateProcess(d) {
+  document.getElementById('last-update').textContent = 'Last Sync: ' + d.timestamp;
+  
+  const updVal = (id, cardId, val) => {
+    const el = document.getElementById(id);
+    if(el.textContent != val) { el.textContent = val; flashElem(cardId); }
+  };
+
+  updVal('val-total', 'card-total', d.totalPackets.toLocaleString());
+  updVal('val-pps', 'card-pps', d.packetsPerSecond.toFixed(1));
+  updVal('val-syn', 'card-syn', d.synCount);
+  
+  const mEl = document.getElementById('val-ml');
+  if (mEl.textContent !== (d.mlPrediction || '—')) {
+    mEl.textContent = d.mlPrediction || '—';
+    mEl.style.color = d.mlAnomaly ? 'var(--danger)' : 'var(--success)';
+    document.getElementById('val-ml-score').textContent = 'Confidence Score: ' + (d.mlScore ? d.mlScore.toFixed(4) : '0.0000');
+    if(d.mlAnomaly) flashElem('card-ml');
+  }
+
+  document.getElementById('cnt-tcp').textContent = d.tcpCount || 0;
+  document.getElementById('cnt-udp').textContent = d.udpCount || 0;
+  document.getElementById('cnt-icmp').textContent = d.icmpCount || 0;
+  document.getElementById('cnt-other').textContent = d.otherCount || 0;
+
+  ppsLabels.push(d.timestamp); ppsVals.push(d.packetsPerSecond);
+  if (ppsLabels.length > 20) { ppsLabels.shift(); ppsVals.shift(); }
+  ppsChart.update('none');
+
+  protoChart.data.datasets[0].data = [d.tcpCount||1, d.udpCount||1, d.icmpCount||1, d.otherCount||1];
+  protoChart.update('none');
+
+  const level = d.alertLevel || 'NONE';
+  const badge = document.getElementById('alert-badge');
+  badge.textContent = level; badge.className = 'badge badge-' + level;
+
+  const banner = document.getElementById('alert-banner');
+  if (level !== 'NONE' && d.alerts && d.alerts.length > 0) {
+    banner.style.display = 'block';
+    banner.innerHTML = `<strong>[${level}] SYSTEM ALERT:</strong> ${d.alerts[0].message}`;
+    if (level === 'HIGH') banner.style.backgroundColor = 'rgba(239,68,68,0.15)';
+    else if (level === 'MEDIUM') banner.style.backgroundColor = 'rgba(245,158,11,0.15)';
+    else banner.style.backgroundColor = 'rgba(16,185,129,0.15)';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  if (d.alerts && d.alerts.length > 0) {
+    const list = document.getElementById('alert-list');
+    if (list.querySelector('div[style*="text-align:center"]')) list.innerHTML = '';
+
+    d.alerts.forEach(alert => {
+      const typeStr = alert.type || 'UNKNOWN';
+      const iconStr = TypeIcons[typeStr] || TypeIcons.DEFAULT;
+      const typeCol = TypeColors[typeStr] || TypeColors.DEFAULT;
+      
+      const item = document.createElement('div');
+      item.className = 'feed-item ' + (alert.level || 'LOW');
+      item.innerHTML = `
+        <div class="feed-icon">${iconStr}</div>
+        <div style="flex:1;">
+          <div class="feed-meta">
+            <span class="feed-type" style="color:${typeCol}">${typeStr.replace('_', ' ')}</span>
+            <span>${d.timestamp}</span>
+          </div>
+          <div class="feed-msg">${alert.message}</div>
+        </div>
+      `;
+      
+      list.prepend(item);
+      while (list.children.length > 100) list.removeChild(list.lastChild);
+    });
+  }
+}
+
+function clearFeed() {
+  document.getElementById('alert-list').innerHTML = `
+    <div style="text-align:center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; font-weight: 500;">
+      <div style="font-size: 24px; margin-bottom: 12px; opacity: 0.5;">🧹</div>
+      Logs cleared. Monitoring for new anomalies...
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
