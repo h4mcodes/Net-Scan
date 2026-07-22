@@ -264,5 +264,11 @@ Full Stack • Java • Python • AI
 
 If you found this project useful, consider giving it a **Star ⭐** on GitHub.
 
+---
+
+# 📄 License
+
+This project is available under the MIT License.
+
 
 
