@@ -1,0 +1,25 @@
+# Java
+target/
+*.class
+*.jar
+
+# Maven
+.mvn/
+.settings/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
