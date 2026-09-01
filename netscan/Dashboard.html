@@ -6,278 +6,299 @@
 <meta name="description" content="NetScan AI Command Center - Advanced Network Intrusion Detection System Dashboard">
 <title>NetScan Command Center</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  :root {
-    --bg-base: #060913;
-    --bg-mesh-1: rgba(56, 189, 248, 0.15);
-    --bg-mesh-2: rgba(139, 92, 246, 0.15);
-    --glass-bg: rgba(13, 20, 38, 0.5);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-glow: rgba(56, 189, 248, 0.2);
-    
-    --accent-cyan: #38bdf8;
-    --accent-purple: #a855f7;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-
-    --font-heading: 'Outfit', sans-serif;
-    --font-body: 'Inter', sans-serif;
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#080B2A;
+    --bg2:#10143A;
+    --panel:#181B45;
+    --cream:#F4E6B8;
+    --cyan:#18C7D9;
+    --cyanBright:#32E6E6;
+    --green:#59F04A;
+    --orange:#FF8A24;
+    --red:#FF3B30;
+    --purple:#6040A8;
+    --text:#F5EFD2;
+    --muted:#A9A8A0;
+    --accent-cyan:var(--cyan);
+    --accent-purple:var(--purple);
+    --success:var(--green);
+    --warning:var(--orange);
+    --danger:var(--red);
+    --bg-base:var(--bg);
+    --text-primary:var(--text);
+    --text-secondary:var(--muted);
+    --text-muted:var(--muted);
+    --glass-bg:var(--panel);
+    --glass-border:#000;
   }
-
-  body {
-    background-color: var(--bg-base);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    min-height: 100vh;
-    padding: 24px;
-    overflow-x: hidden;
-    position: relative;
-    -webkit-font-smoothing: antialiased;
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    padding:14px;
+    overflow-x:hidden;
+    position:relative;
+    -webkit-font-smoothing:antialiased;
   }
-
-  /* Animated Background Mesh */
-  .bg-mesh {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    z-index: -1; overflow: hidden; pointer-events: none;
-    background: radial-gradient(circle at 15% 50%, var(--bg-mesh-1), transparent 40%),
-                radial-gradient(circle at 85% 30%, var(--bg-mesh-2), transparent 40%);
-    animation: meshPulse 15s ease-in-out infinite alternate;
+  /* — CRT overlay — */
+  .crt-overlay{
+    position:fixed;inset:0;pointer-events:none;z-index:9999;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
+    opacity:0.45;
   }
-  @keyframes meshPulse {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(1.1); opacity: 1; }
+  .crt-overlay::after{
+    content:'';position:fixed;inset:0;
+    background:radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.42) 100%);
   }
-
-  /* Structural Tags */
-  main {
-    max-width: 1440px; margin: 0 auto;
+  @keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+  @keyframes flashBorder{0%{opacity:1}100%{opacity:0}}
+  @keyframes slideInFeed{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes pulseAlert{0%{box-shadow:0 0 0 0 rgba(255,59,48,0.4)}70%{box-shadow:0 0 0 8px rgba(255,59,48,0)}100%{box-shadow:0 0 0 0 rgba(255,59,48,0)}}
+  /* — layout — */
+  main{max-width:1440px;margin:0 auto}
+  section{margin-bottom:14px}
+  /* — retro window chrome — */
+  .retro-bar{
+    background:var(--cream);
+    color:#080B2A;
+    font-family:'VT323', monospace;
+    font-size:13px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:4px 8px;
+    border-bottom:3px solid #000;
   }
-  section { 
-    margin-bottom: 24px; 
+  .retro-bar .wt-btns{display:flex;gap:4px}
+  .retro-bar .wt-btn{width:16px;height:16px;border:2px solid #000;background:#080B2A;color:var(--cream);display:grid;place-items:center;font-size:9px;line-height:1}
+  /* — header — */
+  header{
+    background:var(--panel);
+    border:3px solid #000;
+    box-shadow:4px 4px 0 #000, inset 1px 1px 0 rgba(255,255,255,0.06);
+    margin-bottom:14px;
+    overflow:hidden;
   }
-
-  /* Header */
-  header {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 16px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    margin-bottom: 32px;
+  header .header-inner{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 14px;gap:16px;flex-wrap:wrap;
   }
-
-  .logo { display: flex; align-items: center; gap: 16px; }
-  .logo-icon {
-    width: 48px; height: 48px;
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 20px; font-weight: 700; font-family: var(--font-heading);
-    box-shadow: 0 0 24px var(--glass-glow);
-    position: relative;
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo-icon{
+    width:44px;height:44px;
+    background:var(--cream);
+    border:3px solid #000;
+    box-shadow:2px 2px 0 #000;
+    display:flex;align-items:center;justify-content:center;
+    color:#080B2A;font-size:15px;font-weight:700;font-family:'Press Start 2P', monospace;
+    letter-spacing:-1px;
   }
-  .logo-icon::after {
-    content: ''; position: absolute; inset: -2px; border-radius: inherit;
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-    filter: blur(8px); opacity: 0.6; z-index: -1;
+  .logo-text h1{font-family:'Press Start 2P', monospace;font-size:14px;letter-spacing:1px;color:var(--text);text-shadow:1px 1px 0 #000;line-height:1.2}
+  .logo-text p{font-family:'VT323', monospace;font-size:13px;letter-spacing:1px;color:var(--muted);margin-top:2px}
+  .status-cluster{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .last-update{
+    font-family:'Share Tech Mono', monospace;
+    font-size:12px;color:var(--muted);
+    background:#080B2A;border:2px solid #000;padding:5px 8px;
   }
-
-  .logo-text h1 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
-  .logo-text p { font-size: 13px; color: var(--text-secondary); }
-
-  .status-cluster { display: flex; align-items: center; gap: 24px; }
-  .last-update { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-  
-  .ws-badge {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
-    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  .ws-badge{
+    display:flex;align-items:center;gap:8px;
+    background:#080B2A;border:2px solid #000;
+    padding:5px 10px;font-size:12px;font-weight:700;
+    font-family:'VT323', monospace;letter-spacing:1px;
+    box-shadow:2px 2px 0 #000;
   }
-  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); transition: 0.3s; }
-  .status-dot.live { background: var(--success); box-shadow: 0 0 12px var(--success); }
-
-  /* Alert Banner */
-  #alert-banner { /* ... enhanced banner ... */ }
-
-  /* Grid Layouts */
-  .grid { display: grid; gap: 24px; }
-  .grid-kpis { grid-template-columns: repeat(4, 1fr); }
-  .grid-charts { grid-template-columns: 2fr 1fr; }
-  .grid-content { grid-template-columns: 1fr 3fr; }
-  @media (max-width: 1024px) {
-    .grid-kpis { grid-template-columns: repeat(2, 1fr); }
-    .grid-charts, .grid-content { grid-template-columns: 1fr; }
+  .status-dot{width:10px;height:10px;border:2px solid #000;background:var(--red);display:inline-block;transition:0.3s}
+  .status-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.2s steps(1) infinite}
+  #status-text{color:var(--text)}
+  /* — alert banner retro — */
+  #alert-banner{
+    border:3px solid #000 !important;
+    box-shadow:4px 4px 0 #000;
+    font-family:'Share Tech Mono', monospace !important;
+    font-size:13px !important;
+    border-radius:0 !important;
+    backdrop-filter:none !important;
+    margin-bottom:14px !important;
+    padding:10px 14px !important;
   }
-
-  /* Glass Cards */
-  .card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 24px;
-    position: relative;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    display: flex; flex-direction: column;
+  /* — grids — */
+  .grid{display:grid;gap:14px}
+  .grid-kpis{grid-template-columns:repeat(4,1fr)}
+  .grid-charts{grid-template-columns:2fr 1fr}
+  .grid-content{grid-template-columns:1fr 3fr}
+  @media(max-width:1024px){.grid-kpis{grid-template-columns:repeat(2,1fr)}.grid-charts,.grid-content{grid-template-columns:1fr}}
+  @media(max-width:520px){.grid-kpis{grid-template-columns:1fr}}
+  /* — retro cards — replaces .card — */
+  .card{
+    background:var(--panel);
+    border:3px solid #000;
+    box-shadow:4px 4px 0 #000, inset 1px 1px 0 rgba(255,255,255,0.06);
+    padding:0;
+    position:relative;
+    display:flex;flex-direction:column;
+    overflow:hidden;
+    transition:none;
   }
-  .card:hover { 
-    transform: translateY(-4px); 
-    box-shadow: 0 12px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset; 
+  .card:hover{transform:none;box-shadow:4px 4px 0 #000, inset 1px 1px 0 rgba(255,255,255,0.06)}
+  .card-header{
+    background:var(--cream);
+    color:#080B2A;
+    font-family:'VT323', monospace;
+    font-size:13px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    font-weight:400;
+    padding:5px 8px;
+    border-bottom:3px solid #000;
+    margin-bottom:0 !important;
+    display:flex;justify-content:space-between;align-items:center;
   }
-  
-  .card-header { font-family: var(--font-heading); font-size: 13px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;}
-  
-  .kpi-value { font-family: var(--font-heading); font-size: 38px; font-weight: 700; color: var(--text-primary); line-height: 1.2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-  .kpi-value.cyan { background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .kpi-sub { font-size: 13px; color: var(--text-muted); margin-top: 8px; font-weight: 500; }
-
-  /* Flash Animation for Updates */
-  .card.updated::after {
-    content: ''; position: absolute; inset: 0; border-radius: 16px;
-    border: 2px solid var(--accent-cyan);
-    animation: flashBorder 0.8s ease-out forwards; pointer-events: none;
-    box-shadow: inset 0 0 20px var(--glass-glow);
+  /* card inner padding */
+  .card > .kpi-value, .card > .kpi-sub, .card > div > .badge, .card .proto-grid{margin-left:14px;margin-right:14px}
+  .card .kpi-value{margin-top:14px}
+  .card .kpi-sub{margin-bottom:14px}
+  .card > div:has(> #alert-badge){padding:14px}
+  .kpi-value{
+    font-family:'Press Start 2P', monospace;
+    font-size:22px;
+    font-weight:400;
+    color:var(--text);
+    line-height:1.2;
+    text-shadow:1px 1px 0 #000;
   }
-  @keyframes flashBorder { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-  /* Protocol Breakdown */
-  .proto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: auto; }
-  .proto-item { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
-  .proto-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
-  .proto-val { font-size: 18px; font-weight: 600; font-family: var(--font-heading); }
-  
-  /* Feed System */
-  .feed-panel { height: 550px; overflow: hidden; display: flex; flex-direction: column; }
-  .feed-btn { 
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
-    color: var(--text-secondary); padding: 6px 12px; border-radius: 8px; 
-    cursor: pointer; transition: all 0.2s; font-size: 11px; font-weight: 600; 
+  .kpi-value.cyan{color:var(--cyan);text-shadow:0 0 8px rgba(24,199,217,0.45), 1px 1px 0 #000}
+  .kpi-sub{font-family:'Share Tech Mono', monospace;font-size:11px;color:var(--muted);margin-top:6px;font-weight:400;letter-spacing:0.5px}
+  /* flash on update — keep JS hook .updated */
+  .card.updated::after{
+    content:'';position:absolute;inset:0;
+    border:2px solid var(--cyan);
+    animation:flashBorder 0.8s ease-out forwards;pointer-events:none;
+    box-shadow:inset 0 0 12px rgba(24,199,217,0.25);
+    border-radius:0;
   }
-  .feed-btn:hover { background: var(--text-primary); color: var(--bg-base); }
-  
-  #alert-list { flex: 1; overflow-y: auto; padding-right: 12px; display: flex; flex-direction: column; gap: 12px; }
-  #alert-list::-webkit-scrollbar { width: 6px; }
-  #alert-list::-webkit-scrollbar-track { background: transparent; }
-  #alert-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-  #alert-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-
-  .feed-item {
-    background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);
-    border-radius: 12px; padding: 16px; position: relative;
-    border-left: 4px solid transparent; 
-    animation: slideInFeed 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex; gap: 16px; align-items: flex-start;
-    transition: transform 0.2s;
+  /* — chart cards inner — */
+  .card canvas{filter:contrast(1.05)}
+  /* — proto grid — */
+  .proto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;margin-bottom:14px}
+  .proto-item{background:#080B2A;padding:10px;border:2px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,0.4)}
+  .proto-label{font-family:'VT323', monospace;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .proto-val{font-family:'Press Start 2P', monospace;font-size:14px;font-weight:400}
+  /* — feed panel — */
+  .feed-panel{height:550px;overflow:hidden;display:flex;flex-direction:column}
+  .feed-panel .card-header{flex-shrink:0}
+  .feed-btn{
+    background:var(--panel);border:2px solid #000;color:var(--text);
+    padding:4px 8px;cursor:pointer;font-family:'VT323', monospace;font-size:12px;letter-spacing:1px;
+    box-shadow:2px 2px 0 #000;transition:none;
   }
-  .feed-item:hover { transform: translateX(4px); background: rgba(255,255,255,0.04); }
-  @keyframes slideInFeed { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-
-  .feed-item.HIGH { border-left-color: var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.1) 0%, transparent 100%); }
-  .feed-item.MEDIUM { border-left-color: var(--warning); background: linear-gradient(90deg, rgba(245,158,11,0.1) 0%, transparent 100%); }
-  .feed-item.LOW { border-left-color: var(--success); background: linear-gradient(90deg, rgba(16,185,129,0.1) 0%, transparent 100%); }
-
-  .feed-icon { 
-    width: 36px; height: 36px; border-radius: 10px; 
-    display: flex; align-items: center; justify-content: center; font-size: 18px;
-    background: rgba(0,0,0,0.2); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+  .feed-btn:hover{background:var(--cream);color:#080B2A}
+  #alert-list{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;background:#080B2A;margin:0;border-top:3px solid #000}
+  #alert-list::-webkit-scrollbar{width:8px}
+  #alert-list::-webkit-scrollbar-track{background:#000}
+  #alert-list::-webkit-scrollbar-thumb{background:var(--cyan);border:1px solid #000}
+  .feed-item{
+    background:var(--panel);border:2px solid #000;
+    border-left:4px solid #000;
+    padding:10px;
+    display:flex;gap:10px;align-items:flex-start;
+    animation:slideInFeed 0.4s steps(4);
+    transition:none;
   }
-  .feed-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary); }
-  .feed-type { font-weight: 700; letter-spacing: 0.5px; font-family: var(--font-heading); }
-  .feed-msg { font-size: 14px; line-height: 1.5; color: #e2e8f0; }
-
-  /* Badges */
-  .badge { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: 1px; font-family: var(--font-heading); }
-  .badge-NONE { background: rgba(148,163,184,0.1); color: var(--text-secondary); border: 1px solid rgba(148,163,184,0.2); }
-  .badge-LOW { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
-  .badge-MEDIUM { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
-  .badge-HIGH { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.4); box-shadow: 0 0 20px rgba(239,68,68,0.2); animation: pulseAlert 2s infinite; }
-  @keyframes pulseAlert { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
-
+  .feed-item:hover{transform:none;background:var(--panel);filter:brightness(1.08)}
+  .feed-item.HIGH{border-left-color:var(--red);background:#1e0f1e}
+  .feed-item.MEDIUM{border-left-color:var(--orange);background:#1e1a14}
+  .feed-item.LOW{border-left-color:var(--green);background:#0f1e14}
+  .feed-icon{width:32px;height:32px;border:2px solid #000;background:#080B2A;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .feed-meta{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;color:var(--muted);font-family:'Share Tech Mono', monospace}
+  .feed-type{font-weight:700;letter-spacing:0.5px;font-family:'VT323', monospace;font-size:13px}
+  .feed-msg{font-size:12px;line-height:1.5;color:var(--text);font-family:'Share Tech Mono', monospace}
+  /* — badges — retro pixel — */
+  .badge{display:inline-flex;align-items:center;padding:4px 8px;font-size:11px;font-weight:700;letter-spacing:1px;font-family:'VT323', monospace;border:2px solid #000;box-shadow:2px 2px 0 #000}
+  .badge-NONE{background:#0a0e2e;color:var(--muted);border-color:#1e2250}
+  .badge-LOW{background:var(--green);color:#000;border-color:#000}
+  .badge-MEDIUM{background:var(--orange);color:#000;border-color:#000}
+  .badge-HIGH{background:var(--red);color:#fff;border-color:#000;animation:pulseAlert 1.6s infinite}
 </style>
 </head>
 <body>
 
-<div class="bg-mesh"></div>
+<div class="crt-overlay" aria-hidden="true"></div>
 
 <main>
   <header>
-    <div class="logo">
-      <div class="logo-icon">NS</div>
-      <div class="logo-text">
-        <h1>NetScan</h1>
-        <p>AI Command Center Dashboard</p>
+    <div class="retro-bar"><span>NEXUS NIDS // NETSCAN // NETWORK INTRUSION DETECTION SYSTEM v2.6.0</span><span class="wt-btns"><span class="wt-btn">_</span><span class="wt-btn">□</span><span class="wt-btn">X</span></span></div>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">NS</div>
+        <div class="logo-text">
+          <h1>NetScan</h1>
+          <p>AI COMMAND CENTER — NEXUS MODE</p>
+        </div>
       </div>
-    </div>
-    <div class="status-cluster">
-      <span class="last-update" id="last-update">Waiting for telemetry...</span>
-      <div class="ws-badge">
-        <div class="status-dot" id="status-dot"></div>
-        <span id="status-text">Disconnected</span>
+      <div class="status-cluster">
+        <span class="last-update" id="last-update">Waiting for telemetry...</span>
+        <div class="ws-badge">
+          <div class="status-dot" id="status-dot"></div>
+          <span id="status-text">Disconnected</span>
+        </div>
       </div>
     </div>
   </header>
 
-  <div id="alert-banner" class="alert-banner" style="display:none; margin-bottom: 24px; padding: 16px 24px; border-radius: 12px; font-weight: 600; border-left: 4px solid var(--danger); background: rgba(239,68,68,0.1); color: #fff; backdrop-filter: blur(8px);"></div>
+  <div id="alert-banner" class="alert-banner" style="display:none; margin-bottom: 14px; padding: 10px 14px; font-weight: 700; border-left: 4px solid var(--danger); background: rgba(239,68,68,0.12); color: #fff;"></div>
 
   <section class="grid grid-kpis">
     <article class="card" id="card-total">
-      <div class="card-header"><span>Total Packets</span></div>
+      <div class="card-header"><span>TOTAL PACKETS</span><span style="font-size:10px;opacity:0.7">● LIFETIME</span></div>
       <div class="kpi-value cyan" id="val-total">—</div>
-      <div class="kpi-sub">Lifetime Capture</div>
+      <div class="kpi-sub">LIFETIME CAPTURE</div>
     </article>
     <article class="card" id="card-pps">
-      <div class="card-header"><span>Packets / Sec</span></div>
+      <div class="card-header"><span>PACKETS / SEC</span><span style="font-size:10px;opacity:0.7">● 5S AVG</span></div>
       <div class="kpi-value cyan" id="val-pps">—</div>
       <div class="kpi-sub">5s Window Avg</div>
     </article>
     <article class="card" id="card-syn">
-      <div class="card-header"><span>SYN Elements</span></div>
+      <div class="card-header"><span>SYN ELEMENTS</span><span style="font-size:10px;opacity:0.7">● FLAGGED</span></div>
       <div class="kpi-value cyan" id="val-syn">—</div>
       <div class="kpi-sub">Flagged in Window</div>
     </article>
     <article class="card" id="card-ml">
-      <div class="card-header"><span>AI Prediction</span></div>
-      <div class="kpi-value" id="val-ml" style="font-size: 28px; line-height: 1.4;">—</div>
+      <div class="card-header"><span>AI PREDICTION</span><span style="font-size:10px;opacity:0.7">● ISOLATION FOREST</span></div>
+      <div class="kpi-value" id="val-ml" style="font-size: 18px; line-height: 1.4;">—</div>
       <div class="kpi-sub" id="val-ml-score">Confidence Score: —</div>
     </article>
   </section>
 
   <section class="grid grid-charts">
-    <article class="card" style="padding: 24px;">
-      <div class="card-header"><span>Live Traffic Volume (P/s)</span></div>
-      <div style="height: 250px; width: 100%;"><canvas id="chart-pps"></canvas></div>
+    <article class="card" style="padding:0;">
+      <div class="card-header"><span>LIVE TRAFFIC VOLUME (P/s)</span><span style="font-size:10px;opacity:0.7">ETH0 // REAL-TIME</span></div>
+      <div style="height: 250px; width: 100%; padding:12px; background:#080B2A;"><canvas id="chart-pps"></canvas></div>
     </article>
-    <article class="card" style="padding: 24px;">
-      <div class="card-header"><span>Protocol Distribution</span></div>
-      <div style="height: 250px; width: 100%; display: flex; justify-content: center;"><canvas id="chart-proto"></canvas></div>
+    <article class="card" style="padding:0;">
+      <div class="card-header"><span>PROTOCOL DISTRIBUTION</span><span style="font-size:10px;opacity:0.7">● PACKET MIX</span></div>
+      <div style="height: 250px; width: 100%; display: flex; justify-content: center; padding:12px; background:#080B2A;"><canvas id="chart-proto"></canvas></div>
     </article>
   </section>
 
   <section class="grid grid-content">
-    <div style="display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
       <article class="card" style="flex: 0 0 auto;">
-        <div class="card-header"><span>System Threat Level</span></div>
-        <div style="margin-top: 8px;"><span class="badge badge-NONE" id="alert-badge">NONE</span></div>
+        <div class="card-header"><span>SYSTEM THREAT LEVEL</span></div>
+        <div style="padding:14px;"><span class="badge badge-NONE" id="alert-badge">NONE</span></div>
       </article>
       <article class="card" style="flex: 1;">
-        <div class="card-header"><span>Protocol Metrics</span></div>
+        <div class="card-header"><span>PROTOCOL METRICS</span></div>
         <div class="proto-grid">
           <div class="proto-item">
             <div class="proto-label">TCP Segments</div>
-            <div class="proto-val" id="cnt-tcp" style="color: var(--accent-cyan);">—</div>
+            <div class="proto-val" id="cnt-tcp" style="color: var(--cyan);">—</div>
           </div>
           <div class="proto-item">
             <div class="proto-label">UDP Datagrams</div>
@@ -289,21 +310,21 @@
           </div>
           <div class="proto-item">
             <div class="proto-label">Other</div>
-            <div class="proto-val" id="cnt-other" style="color: var(--text-secondary);">—</div>
+            <div class="proto-val" id="cnt-other" style="color: var(--text);">—</div>
           </div>
         </div>
       </article>
     </div>
 
     <article class="card feed-panel">
-      <div class="card-header" style="margin-bottom: 20px;">
-        <span>Threat Detection Feed</span>
-        <button class="feed-btn" onclick="clearFeed()" id="clear-feed-btn">CLEAR LOGS</button>
+      <div class="card-header">
+        <span>THREAT DETECTION FEED</span>
+        <button class="feed-btn" onclick="clearFeed()" id="clear-feed-btn">[ CLEAR LOGS ]</button>
       </div>
       <div id="alert-list">
-        <div style="text-align:center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; font-weight: 500;">
-          <div style="font-size: 24px; margin-bottom: 12px; opacity: 0.5;">🛡️</div>
-          System is secure. Monitoring for anomalies...
+        <div style="text-align:center; padding: 40px 20px; color: var(--muted); font-size: 12px; font-family:'Share Tech Mono', monospace;">
+          <div style="font-size: 20px; margin-bottom: 8px; opacity: 0.6;">■ SYSTEM SECURE ■</div>
+          Monitoring for anomalies...<br><span style="font-size:10px;opacity:0.6">AWAITING TELEMETRY // NEXUS CORE</span>
         </div>
       </div>
     </article>
@@ -320,11 +341,11 @@ const TypeIcons = {
 };
 
 const TypeColors = {
-  'PORT_SCAN': '#f59e0b',
-  'SYN_FLOOD': '#ef4444',
-  'HIGH_TRAFFIC': '#10b981',
-  'ML_ANOMALY': '#a855f7',
-  'DEFAULT': '#f8fafc'
+  'PORT_SCAN': '#FF8A24',
+  'SYN_FLOOD': '#FF3B30',
+  'HIGH_TRAFFIC': '#59F04A',
+  'ML_ANOMALY': '#6040A8',
+  'DEFAULT': '#F5EFD2'
 };
 
 const WS_URL = 'ws://localhost:8080';
@@ -342,14 +363,14 @@ function connect() {
 connect();
 
 // Chart Configuration
-Chart.defaults.color = '#64748b';
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.font.size = 12;
+Chart.defaults.color = '#A9A8A0';
+Chart.defaults.font.family = "'Share Tech Mono', monospace";
+Chart.defaults.font.size = 11;
 
 const ppsCtx = document.getElementById('chart-pps').getContext('2d');
 let gradientPPS = ppsCtx.createLinearGradient(0, 0, 0, 250);
-gradientPPS.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
-gradientPPS.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+gradientPPS.addColorStop(0, 'rgba(24, 199, 217, 0.35)');
+gradientPPS.addColorStop(1, 'rgba(24, 199, 217, 0.0)');
 
 const ppsLabels = [], ppsVals = [];
 const ppsChart = new Chart(ppsCtx, {
@@ -358,16 +379,16 @@ const ppsChart = new Chart(ppsCtx, {
     labels: ppsLabels, 
     datasets: [{ 
       data: ppsVals, 
-      borderColor: '#38bdf8', 
+      borderColor: '#18C7D9', 
       backgroundColor: gradientPPS, 
       borderWidth: 2, 
-      pointRadius: 4, 
-      pointBackgroundColor: '#0f172a',
-      pointBorderColor: '#38bdf8',
+      pointRadius: 3, 
+      pointBackgroundColor: '#080B2A',
+      pointBorderColor: '#18C7D9',
       pointBorderWidth: 2,
-      pointHoverRadius: 6,
+      pointHoverRadius: 5,
       fill: true, 
-      tension: 0.4 
+      tension: 0.35 
     }] 
   },
   options: { 
@@ -376,17 +397,19 @@ const ppsChart = new Chart(ppsCtx, {
     plugins: { 
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        titleFont: { family: 'Outfit', size: 13 },
-        bodyFont: { family: 'Inter', size: 13 },
-        padding: 12,
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1
+        backgroundColor: '#10143A',
+        titleFont: { family: "'VT323', monospace", size: 13 },
+        bodyFont: { family: "'Share Tech Mono', monospace", size: 12 },
+        padding: 10,
+        borderColor: '#000',
+        borderWidth: 2,
+        titleColor: '#F4E6B8',
+        bodyColor: '#F5EFD2'
       }
     }, 
     scales: { 
-      x: { grid: { display: false }, border: { display: false } }, 
-      y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } } 
+      x: { grid: { color: 'rgba(24,199,217,0.06)', borderDash:[4,4] }, border: { display: false }, ticks:{color:'#A9A8A0', font:{family:"'Share Tech Mono'"}} }, 
+      y: { beginAtZero: true, grid: { color: 'rgba(24,199,217,0.08)' }, border: { display: false }, ticks:{color:'#A9A8A0', font:{family:"'Share Tech Mono'"}} } 
     } 
   }
 });
@@ -398,21 +421,24 @@ const protoChart = new Chart(protoCtx, {
     labels: ['TCP','UDP','ICMP','Other'], 
     datasets: [{ 
       data: [1,1,1,1], 
-      backgroundColor: ['#38bdf8','#10b981','#f59e0b','#475569'], 
-      borderWidth: 0, 
-      hoverOffset: 8
+      backgroundColor: ['#18C7D9','#59F04A','#FF8A24','#6040A8'], 
+      borderWidth: 2,
+      borderColor: '#080B2A',
+      hoverOffset: 6
     }] 
   },
   options: { 
     responsive: true, 
     maintainAspectRatio: false, 
-    cutout: '75%', 
+    cutout: '72%', 
     plugins: { 
-      legend: { position: 'right', labels: { boxWidth: 10, padding: 20, font: { family: 'Inter' } } },
+      legend: { position: 'right', labels: { boxWidth: 10, padding: 14, font: { family: "'Share Tech Mono', monospace" }, color:'#F5EFD2' } },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        bodyFont: { family: 'Inter', size: 13 },
-        padding: 12
+        backgroundColor: '#10143A',
+        bodyFont: { family: "'Share Tech Mono', monospace", size: 12 },
+        padding: 10,
+        borderColor: '#000',
+        borderWidth: 2
       }
     } 
   }
@@ -465,9 +491,10 @@ function updateProcess(d) {
   if (level !== 'NONE' && d.alerts && d.alerts.length > 0) {
     banner.style.display = 'block';
     banner.innerHTML = `<strong>[${level}] SYSTEM ALERT:</strong> ${d.alerts[0].message}`;
-    if (level === 'HIGH') banner.style.backgroundColor = 'rgba(239,68,68,0.15)';
-    else if (level === 'MEDIUM') banner.style.backgroundColor = 'rgba(245,158,11,0.15)';
-    else banner.style.backgroundColor = 'rgba(16,185,129,0.15)';
+    if (level === 'HIGH') banner.style.backgroundColor = 'rgba(255,59,48,0.18)';
+    else if (level === 'MEDIUM') banner.style.backgroundColor = 'rgba(255,138,36,0.18)';
+    else banner.style.backgroundColor = 'rgba(89,240,74,0.14)';
+    banner.style.borderLeftColor = level==='HIGH' ? '#FF3B30' : level==='MEDIUM' ? '#FF8A24' : '#59F04A';
   } else {
     banner.style.display = 'none';
   }
@@ -502,9 +529,9 @@ function updateProcess(d) {
 
 function clearFeed() {
   document.getElementById('alert-list').innerHTML = `
-    <div style="text-align:center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; font-weight: 500;">
-      <div style="font-size: 24px; margin-bottom: 12px; opacity: 0.5;">🧹</div>
-      Logs cleared. Monitoring for new anomalies...
+    <div style="text-align:center; padding: 40px 20px; color: var(--muted); font-size: 12px; font-family:'Share Tech Mono', monospace;">
+      <div style="font-size: 18px; margin-bottom: 8px; opacity: 0.6;">■ LOGS CLEARED ■</div>
+      Monitoring for new anomalies...
     </div>
   `;
 }
