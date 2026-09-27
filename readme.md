@@ -219,7 +219,19 @@ Traffic Analytics
 
 Alert Panel
 ```
+---
+# Screenshots
 
+
+Dashboard
+
+![Dashboard](dashboard.png)
+
+
+Feed
+
+![Feed](feed.png)
+---
 ---
 
 # 🎯 Why NETscan?
